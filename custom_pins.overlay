@@ -1,0 +1,141 @@
+/ {
+    pins {
+        compatible = "gpio-keys";
+        status = "okay";
+
+        a0: a0 {
+            label = "ADC";
+            gpios = <&gpioc 5 GPIO_ACTIVE_LOW>;
+        };
+
+        a1: a1 {
+            label = "ADC";
+            gpios = <&gpioc 4 GPIO_ACTIVE_LOW>;
+        };
+
+        a2: a2 {
+            label = "ADC";
+            gpios = <&gpioc 3 GPIO_ACTIVE_LOW>;
+        };
+
+        a3: a3 {
+            label = "ADC";
+            gpios = <&gpioc 2 GPIO_ACTIVE_LOW>;
+        };
+
+        a4: a4 {
+            label = "ADC / I2C3_SDA";
+            gpios = <&gpioc 1 GPIO_ACTIVE_LOW>;
+        };
+
+        a5: a5 {
+            label = "ADC / I2C3_SCL";
+            gpios = <&gpioc 0 GPIO_ACTIVE_LOW>;
+        };
+
+        d0: d0 {
+            label = "UART4_RX";
+            gpios = <&gpioa 1 GPIO_ACTIVE_LOW>;
+        };
+
+        d1: d1 {
+            label = "UART4_TX";
+            gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+        };
+
+        d2: d2 {
+            label = "EXTI14";
+            gpios = <&gpiod 14 GPIO_ACTIVE_LOW>;
+        };
+
+        d3: d3 {
+            label = "TIM3_CH3 / EXTI0";
+            gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+        };
+
+        d4: d4 {
+            label = "GPIO";
+            gpios = <&gpioa 3 GPIO_ACTIVE_LOW>;
+        };
+
+        d5: d5 {
+            label = "TIM3_CH1";
+            gpios = <&gpiob 4 GPIO_ACTIVE_LOW>;
+        };
+
+        d6: d6 {
+            label = "TIM3_CH4";
+            gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+        };
+
+        d7: d7 {
+            label = "GPIO";
+            gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+        };
+
+        d8: d8 {
+            label = "GPIO";
+            gpios = <&gpiob 2 GPIO_ACTIVE_LOW>;
+        };
+
+        d9: d9 {
+            label = "TIM2_CH1";
+            gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+        };
+
+        d10: d10 {
+            label = "TIM2_CH3";
+            gpios = <&gpioa 2 GPIO_ACTIVE_LOW>;
+        };
+
+        d11: d11 {
+            label = "SPI1_MOSI / TIMxx";
+            gpios = <&gpioa 7 GPIO_ACTIVE_LOW>;
+        };
+
+        d12: d12 {
+            label = "SPI1_MISO";
+            gpios = <&gpioa 6 GPIO_ACTIVE_LOW>;
+        };
+
+        d13: d13 {
+            label = "SPI1_SCK / LED1";
+            gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
+        };
+
+        d14: d14 {
+            label = "I2C1_SDA";
+            gpios = <&gpiob 9 GPIO_ACTIVE_LOW>;
+        };
+
+        d15: d15 {
+            label = "I2C1_SCL";
+            gpios = <&gpiob 8 GPIO_ACTIVE_LOW>;
+        };
+    };
+
+    aliases {
+        a0 = &a0;
+        a1 = &a1;
+        a2 = &a2;
+        a3 = &a3;
+        a4 = &a4;
+        a5 = &a5;
+        d0 = &d0;
+        d1 = &d1;
+        d2 = &d2;
+        d3 = &d3;
+        d4 = &d4;
+        d5 = &d5;
+        d6 = &d6;
+        d7 = &d7;
+        d8 = &d8;
+        d9 = &d9;
+        d10 = &d10;
+        d11 = &d11;
+        d12 = &d12;
+        d13 = &d13;
+        d14 = &d14;
+        d15 = &d15;
+    };
+};
