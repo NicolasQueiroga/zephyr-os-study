@@ -1,46 +1,52 @@
 #include "distance.h"
 
 K_THREAD_STACK_DEFINE(distance_calculator_thread_stack_area, STACKSIZE);
-K_THREAD_STACK_DEFINE(time_of_flight_thread_stack_area, STACKSIZE);
 
 void button_pressed(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
     btn_callback_data_t *data = CONTAINER_OF(cb, btn_callback_data_t, cb);
-    const struct gpio_dt_spec *led = data->led;
 
-    gpio_pin_set(led->port, led->pin, 1);
-    k_thread_start(data->time_of_flight_thread_data);
+    gpio_pin_set(data->trig->port, data->trig->pin, 1);
     k_busy_wait(10);
-    gpio_pin_set(led->port, led->pin, 0);
+    gpio_pin_set(data->trig->port, data->trig->pin, 0);
+
+    printk("button_pressed: button pressed\n");
 }
 
-void time_of_flight_thread(void *distance_calculator_thread_data, void *dummy2, void *dummy3)
+void echo_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-    struct k_thread *distance_calculator_thread = (struct k_thread *)distance_calculator_thread_data;
-    ARG_UNUSED(dummy2);
-    ARG_UNUSED(dummy3);
-
-    printk("thread_a: thread started \n");
-
-    printk("thread_a: waiting for thread_b to complete \n");
-    k_thread_join(distance_calculator_thread, K_FOREVER); // wait forever until thread_b returns
-
-    while (1)
+    echo_callback_data_t *data = CONTAINER_OF(cb, echo_callback_data_t, cb);
+    if (gpio_pin_get(data->echo->port, data->echo->pin))
     {
-        printk("thread_a: thread loop \n");
-        k_msleep(SLEEPTIME);
+        *data->timer = k_cycle_get_32();
+    }
+    else
+    {
+        uint32_t end_time = k_cycle_get_32();
+        uint32_t cycles_spent = end_time - *data->timer;
+        *data->timer = 0;
+        uint32_t microseconds_spent = k_cyc_to_us_ceil32(cycles_spent);
+        double distance = (double)microseconds_spent / 58.0; // Assuming speed of sound in air 343 m/s
+        if (k_msgq_put(data->distance_queue, &distance, K_NO_WAIT) != 0)
+        {
+            printk("echo_callback: failed to put distance into message queue\n");
+        }
     }
 }
 
-void distance_calculator_thread(void *dummy1, void *dummy2, void *dummy3)
+void distance_calculator_thread(void *queue, void *dummy2, void *dummy3)
 {
-    ARG_UNUSED(dummy1);
+    struct k_msgq *distance_queue = (struct k_msgq *)queue;
     ARG_UNUSED(dummy2);
     ARG_UNUSED(dummy3);
 
-    printk("thread_b: thread started \n");
+    double distance;
 
-    k_msleep(SLEEPTIME);
-
-    printk("thread_b: returning to thread_a \n");
+    while (1)
+    {
+        if (k_msgq_get(distance_queue, &distance, K_NO_WAIT) == 0)
+        {
+            printk("distance_calculator_thread: distance: %f\n", distance);
+        }
+    }
 }
