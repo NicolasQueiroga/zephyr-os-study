@@ -400,6 +400,29 @@ make build
 
 **Why this happens:** System ROS 2 uses 64-bit libraries, while micro-ROS for embedded targets needs 32-bit ARM libraries. The build system gets confused when both are present.
 
+### Missing micro-ROS Headers (action_msgs/msg/goal_info.h)
+
+If you see errors like:
+```
+fatal error: action_msgs/msg/goal_info.h: No such file or directory
+```
+
+This means the micro-ROS library build didn't complete properly or the build cache is stale.
+
+**Solution - Use the cleanup script:**
+```bash
+# This script does a complete cleanup and rebuild
+export ZEPHYR_VENV=~/.zephyr_venv
+export ZEPHYR_WS=~/zephyr-ws
+./scripts/clean_rebuild_microros.sh
+```
+
+The script will:
+- Clean all build artifacts
+- Remove all micro-ROS cached files
+- Clear CMake cache
+- Rebuild everything from scratch (takes 5-10 minutes)
+
 ### Permission Errors During Build
 
 The project creates a `.cache` directory for writable cache. If you see permission errors:
