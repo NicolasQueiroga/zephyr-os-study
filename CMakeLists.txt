@@ -30,8 +30,10 @@ target_include_directories(uros PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/uros
     ${ZEPHYR_BASE}/include
 )
-# Link with microros and ensure it provides its include directories
-target_link_libraries(uros PUBLIC microros zephyr)
+# Link with microros - it provides include directories via INTERFACE
+target_link_libraries(uros PUBLIC microros)
+target_link_libraries(uros PRIVATE zephyr)
+add_dependencies(uros microros)
 
 target_link_libraries(app PRIVATE utils distance uros)
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/main.c)
