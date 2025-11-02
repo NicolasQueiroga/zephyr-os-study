@@ -7,6 +7,20 @@ list(APPEND ZEPHYR_EXTRA_MODULES $ENV{ZEPHYR_BASE}/../modules/micro_ros_zephyr_m
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(embarcados-zephyr)
 
+# Get micro-ROS package list and add include directories
+set(MICROROS_DIR $ENV{ZEPHYR_BASE}/../modules/micro_ros_zephyr_module/modules/libmicroros)
+execute_process(
+    COMMAND make --no-print-directory -f libmicroros.mk get_package_names COMPONENT_PATH=${MICROROS_DIR}
+    WORKING_DIRECTORY ${MICROROS_DIR}
+    OUTPUT_VARIABLE MICROROS_PACKAGES
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
+# Add each package include directory
+foreach(pkg ${MICROROS_PACKAGES})
+    include_directories(${MICROROS_DIR}/include/${pkg})
+endforeach()
+
 # Compiler flags for C code
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic")
 
