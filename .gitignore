@@ -1,1 +1,21 @@
+# Build directories
 build
+.cache
+
+# Editor temporary files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Python cache
+*.pyc
+__pycache__/
+
+# External dependencies
+modules/
+
+# OS files
+.DS_Store
+Thumbs.db
