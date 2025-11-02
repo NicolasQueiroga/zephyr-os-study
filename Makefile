@@ -15,8 +15,12 @@ ZEPHYR_WS ?= $(HOME)/zephyr-ws
 # Set ZEPHYR_BASE to point to zephyr directory in workspace
 export ZEPHYR_BASE := $(ZEPHYR_WS)/zephyr
 
+# Set writable cache directory in project to avoid permission issues
+CACHE_DIR := $(CURDIR)/.cache
+export USER_CACHE_DIR := $(CACHE_DIR)
+
 # West command with venv activation and proper environment setup
-WEST := . $(ZEPHYR_VENV)/bin/activate && export ZEPHYR_BASE=$(ZEPHYR_BASE) && west
+WEST := . $(ZEPHYR_VENV)/bin/activate && export ZEPHYR_BASE=$(ZEPHYR_BASE) && export USER_CACHE_DIR=$(USER_CACHE_DIR) && west
 
 .PHONY: help
 help: ## Show this help message
@@ -110,6 +114,13 @@ update: ## Update Zephyr and modules
 	@echo "Updating Zephyr workspace at $(ZEPHYR_WS)..."
 	cd $(ZEPHYR_WS) && $(WEST) update
 
+.PHONY: uros-agent
+uros-agent: ## Run micro-ROS agent for serial connection
+	@echo "Starting micro-ROS agent on serial..."
+	@which ros2 > /dev/null 2>&1 || (echo "Error: ROS 2 not found. Install ROS 2 first." && exit 1)
+	@echo "Note: Update the serial port to match your board"
+	ros2 run micro_ros_agent micro_ros_agent serial --dev /dev/ttyACM0 -v6
+
 .PHONY: check
 check: ## Check west installation and environment
 	@echo "Checking Zephyr environment..."
@@ -152,6 +163,9 @@ install-deps: ## Install required dependencies
 	@echo ""
 	@echo "Installing Python requirements from Zephyr..."
 	. $(ZEPHYR_VENV)/bin/activate && pip install -r $(ZEPHYR_WS)/zephyr/scripts/requirements.txt
+	@echo ""
+	@echo "Installing micro-ROS dependencies..."
+	. $(ZEPHYR_VENV)/bin/activate && pip install catkin_pkg lark-parser 'empy<4.0' colcon-common-extensions
 	@echo ""
 	@echo "✓ Dependencies installed successfully"
 	@echo "Run 'make check' to verify installation"
