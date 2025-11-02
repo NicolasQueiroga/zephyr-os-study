@@ -15,10 +15,6 @@ ZEPHYR_WS ?= $(HOME)/zephyr-ws
 # Set ZEPHYR_BASE to point to zephyr directory in workspace
 export ZEPHYR_BASE := $(ZEPHYR_WS)/zephyr
 
-# Set writable cache directory in project to avoid permission issues
-CACHE_DIR := $(CURDIR)/.cache
-export USER_CACHE_DIR := $(CACHE_DIR)
-
 # West command with venv activation and proper environment setup
 WEST := . $(ZEPHYR_VENV)/bin/activate && export ZEPHYR_BASE=$(ZEPHYR_BASE) && export USER_CACHE_DIR=$(USER_CACHE_DIR) && west
 
