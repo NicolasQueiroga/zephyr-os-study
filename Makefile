@@ -52,7 +52,12 @@ pristine: ## Remove all build artifacts and start fresh
 .PHONY: flash
 flash: ## Flash the board
 	@echo "Flashing $(BOARD)..."
-	$(WEST) flash
+	$(WEST) flash -r openocd
+
+.PHONY: flash-openocd
+flash-openocd: ## Flash the board using OpenOCD
+	@echo "Flashing $(BOARD) with OpenOCD..."
+	$(WEST) flash -r openocd
 
 .PHONY: build-flash
 build-flash: build flash ## Build and flash in one command
