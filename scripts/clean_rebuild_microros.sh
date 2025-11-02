@@ -67,17 +67,6 @@ else
 fi
 echo ""
 
-# Reapply time.h patch
-echo "Reapplying Zephyr 4.3+ compatibility patch..."
-PATCH_FILE="$MICROROS_DIR/micro_ros_src/src/rcutils/src/time_unix.c"
-if [ -f "$PATCH_FILE" ]; then
-    sed -i.bak 's|zephyr/posix/time.h|zephyr/posix/sys/time.h|g' "$PATCH_FILE"
-    echo "✓ Patch applied"
-else
-    echo "ℹ️  Patch file not yet present (will be created during build)"
-fi
-echo ""
-
 # Clean CMake cache
 echo "Cleaning CMake cache..."
 rm -rf build/CMakeCache.txt build/CMakeFiles
@@ -90,9 +79,31 @@ echo "This will take 5-10 minutes..."
 echo "========================================"
 echo ""
 
-# Rebuild everything
+# Start the build - it will fail at rcutils, then we patch and retry
+echo "Step 1: Initial build (may fail at rcutils - this is expected)..."
 export ZEPHYR_VENV
-make build
+make build 2>&1 | tee /tmp/microros_build.log || true
+
+# Apply the patch if the file now exists
+PATCH_FILE="$MICROROS_DIR/micro_ros_src/src/rcutils/src/time_unix.c"
+if [ -f "$PATCH_FILE" ]; then
+    echo ""
+    echo "Step 2: Applying Zephyr 4.3+ compatibility patch..."
+    if grep -q "zephyr/posix/time.h" "$PATCH_FILE"; then
+        sed -i.bak 's|zephyr/posix/time.h|zephyr/posix/sys/time.h|g' "$PATCH_FILE"
+        echo "✓ Patch applied to time_unix.c"
+
+        echo ""
+        echo "Step 3: Rebuilding with patch applied..."
+        make build
+    else
+        echo "✓ Patch already applied or not needed"
+    fi
+else
+    echo "⚠️  Warning: rcutils source file not found at: $PATCH_FILE"
+    echo "   The build may have failed for a different reason."
+    exit 1
+fi
 
 echo ""
 echo "========================================"
