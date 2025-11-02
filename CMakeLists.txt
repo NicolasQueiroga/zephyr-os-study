@@ -1,13 +1,14 @@
-cmake_minimum_required(VERSION 3.13.1)
+cmake_minimum_required(VERSION 3.20)
 set(DTC_OVERLAY_FILE ${CMAKE_CURRENT_SOURCE_DIR}/custom_pins.overlay)
+
+# Add micro-ROS module
+list(APPEND ZEPHYR_EXTRA_MODULES $ENV{ZEPHYR_BASE}/../modules/micro_ros_zephyr_module/modules/libmicroros)
+
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(embarcados-zephyr)
 
-set(GCC_COVERAGE_COMPILE_FLAGS "-g -Og -Wall -pedantic -O3")
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+# Compiler flags for C code
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic")
 
 add_library(distance ${CMAKE_CURRENT_SOURCE_DIR}/src/distance/distance.c)
 target_include_directories(distance PUBLIC
@@ -24,7 +25,12 @@ target_include_directories(utils PUBLIC
 )
 target_link_libraries(utils PRIVATE zephyr distance)
 
+add_library(uros ${CMAKE_CURRENT_SOURCE_DIR}/src/uros/uros.c)
+target_include_directories(uros PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/uros
+    ${ZEPHYR_BASE}/include
+)
+target_link_libraries(uros PRIVATE zephyr microros)
 
-
-target_link_libraries(app PRIVATE utils distance)
+target_link_libraries(app PRIVATE utils distance uros)
 target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/main.c)
