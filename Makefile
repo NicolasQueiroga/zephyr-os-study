@@ -17,10 +17,12 @@ export ZEPHYR_BASE := $(ZEPHYR_WS)/zephyr
 
 # West command with venv activation and proper environment setup
 # Unset ROS environment variables to prevent conflicts with system ROS 2 installation
+# Add venv/bin to PATH so CMake subprocesses can find colcon
 WEST := unset ROS_DISTRO ROS_VERSION ROS_PYTHON_VERSION CMAKE_PREFIX_PATH AMENT_PREFIX_PATH && \
         . $(ZEPHYR_VENV)/bin/activate && \
         export ZEPHYR_BASE=$(ZEPHYR_BASE) && \
         export USER_CACHE_DIR=$(USER_CACHE_DIR) && \
+        export PATH=$(ZEPHYR_VENV)/bin:$$PATH && \
         west
 
 .PHONY: help
@@ -30,27 +32,7 @@ help: ## Show this help message
 	@echo "Usage: ZEPHYR_VENV=/path/to/venv make [target]"
 	@echo ""
 	@echo "Available targets:"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
-
-.PHONY: build-microros
-build-microros: ## Build micro-ROS library only (run first on fresh install)
-	@echo "Building micro-ROS library..."
-	@echo "This may take 5-10 minutes on first run..."
-	cd $(ZEPHYR_WS)/modules/micro_ros_zephyr_module/modules/libmicroros && \
-	. $(ZEPHYR_VENV)/bin/activate && \
-	make -f libmicroros.mk || { \
-		echo ""; \
-		echo "⚠️  Build failed, applying Zephyr 4.3+ compatibility patch..."; \
-		if [ -f micro_ros_src/src/rcutils/src/time_unix.c ]; then \
-			sed -i.bak 's|zephyr/posix/time.h|zephyr/posix/sys/time.h|g' micro_ros_src/src/rcutils/src/time_unix.c; \
-			echo "✓ Patch applied, rebuilding..."; \
-			make -f libmicroros.mk; \
-		else \
-			echo "✗ Patch file not found"; \
-			exit 1; \
-		fi; \
-	}
-	@echo "✓ micro-ROS library built successfully"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 .PHONY: build
 build: ## Build the project
@@ -156,40 +138,49 @@ check: ## Check west installation and environment
 	@echo ""
 	@echo "=== Build Tools ==="
 	@echo -n "Ninja (venv): "
-	@. $(ZEPHYR_VENV)/bin/activate && which ninja > /dev/null 2>&1 && echo "✓ $$(which ninja)" || echo "✗ MISSING (run: pip install -r $(ZEPHYR_WS)/zephyr/scripts/requirements.txt)"
+	@. $(ZEPHYR_VENV)/bin/activate && which ninja > /dev/null 2>&1 && echo "✓ $$(which ninja)" || echo "✗ MISSING"
 	@echo -n "CMake: "
-	@which cmake > /dev/null 2>&1 && echo "✓ $$(cmake --version | head -1)" || echo "✗ MISSING (install: brew install cmake)"
+	@which cmake > /dev/null 2>&1 && echo "✓ $$(cmake --version | head -1)" || echo "✗ MISSING"
 	@echo -n "DTC: "
-	@which dtc > /dev/null 2>&1 && echo "✓ $$(which dtc)" || echo "✗ MISSING (install: brew install dtc)"
+	@which dtc > /dev/null 2>&1 && echo "✓ $$(which dtc)" || echo "✗ MISSING"
 	@echo -n "gperf: "
-	@which gperf > /dev/null 2>&1 && echo "✓ $$(which gperf)" || echo "✗ MISSING (install: brew install gperf)"
+	@which gperf > /dev/null 2>&1 && echo "✓ $$(which gperf)" || echo "✗ MISSING"
 	@echo ""
 	@echo "=== Python Packages ==="
+	@echo -n "west: "
+	@. $(ZEPHYR_VENV)/bin/activate && python3 -c "import west" 2>/dev/null && echo "✓ OK" || echo "✗ MISSING"
 	@echo -n "jsonschema: "
 	@. $(ZEPHYR_VENV)/bin/activate && python3 -c "import jsonschema" 2>/dev/null && echo "✓ OK" || echo "✗ MISSING"
 	@echo -n "pyelftools: "
 	@. $(ZEPHYR_VENV)/bin/activate && python3 -c "import elftools" 2>/dev/null && echo "✓ OK" || echo "✗ MISSING"
+	@echo -n "colcon: "
+	@. $(ZEPHYR_VENV)/bin/activate && python3 -c "import colcon_core" 2>/dev/null && echo "✓ OK" || echo "✗ MISSING"
 	@echo ""
 	@echo "=== Project Status ==="
 	@echo -n "Build directory: "
 	@test -d $(BUILD_DIR) && echo "✓ exists" || echo "✗ not found (run 'make build' first)"
-	@echo ""
-	@echo "If any dependencies are missing, run: make install-deps
+	@echo -n "micro-ROS library: "
+	@test -f $(ZEPHYR_WS)/modules/micro_ros_zephyr_module/modules/libmicroros/libmicroros.a && echo "✓ built" || echo "✗ not built (run 'make build-microros' first)"
 
 .PHONY: install-deps
-install-deps: ## Install required dependencies
-	@echo "Installing system dependencies (macOS)..."
-	@which brew > /dev/null 2>&1 || (echo "Error: Homebrew not found. Install from https://brew.sh" && exit 1)
-	brew install cmake dtc gperf
+install-deps: ## Install required dependencies (Linux only)
+	@echo "Installing system dependencies (Linux)..."
+	@which apt > /dev/null 2>&1 || (echo "Error: This target is for Debian/Ubuntu only" && exit 1)
+	sudo apt update
+	sudo apt install -y git cmake ninja-build gperf ccache dfu-util \
+		device-tree-compiler wget python3 python3-pip python3-setuptools \
+		python3-wheel xz-utils file make gcc gcc-multilib g++-multilib \
+		libsdl2-dev libmagic1
 	@echo ""
-	@echo "Installing Python requirements from Zephyr..."
-	. $(ZEPHYR_VENV)/bin/activate && pip install -r $(ZEPHYR_WS)/zephyr/scripts/requirements.txt
-	@echo ""
-	@echo "Installing micro-ROS dependencies..."
+	@echo "Installing Python requirements..."
+	. $(ZEPHYR_VENV)/bin/activate && pip install --upgrade pip
+	. $(ZEPHYR_VENV)/bin/activate && pip install west
 	. $(ZEPHYR_VENV)/bin/activate && pip install catkin_pkg lark-parser 'empy<4.0' colcon-common-extensions
 	@echo ""
 	@echo "✓ Dependencies installed successfully"
-	@echo "Run 'make check' to verify installation"
+	@echo "Note: You still need to install Zephyr Python requirements:"
+	@echo "  source $(ZEPHYR_VENV)/bin/activate"
+	@echo "  pip install -r $(ZEPHYR_WS)/zephyr/scripts/requirements.txt"
 
 .PHONY: rebuild
 rebuild: clean build ## Clean and rebuild
