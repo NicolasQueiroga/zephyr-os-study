@@ -376,8 +376,14 @@ Could not find a configuration file for package "fastcdr" that is compatible wit
 version: 2.2.5 (64bit)
 ```
 
-**Solution:** The Makefile automatically isolates the build from system ROS 2. If the error persists:
+**Solution:** The Makefile automatically isolates the build from system ROS 2. If the error persists, use the provided script:
 
+```bash
+# Run the fix script
+./scripts/fix_ros2_conflict.sh
+```
+
+Or manually:
 ```bash
 # Temporarily unset ROS environment before building
 unset ROS_DISTRO ROS_VERSION ROS_PYTHON_VERSION CMAKE_PREFIX_PATH AMENT_PREFIX_PATH
@@ -386,13 +392,13 @@ make clean
 make build
 ```
 
-Or remove the ROS 2 sourcing from your `~/.bashrc` during the build:
+**Alternative:** Comment out ROS 2 sourcing in `~/.bashrc` during the build:
 ```bash
 # Comment out this line temporarily:
 # source /opt/ros/jazzy/setup.bash
 ```
 
-The issue occurs because system ROS 2 uses 64-bit libraries, while micro-ROS needs 32-bit ARM libraries.
+**Why this happens:** System ROS 2 uses 64-bit libraries, while micro-ROS for embedded targets needs 32-bit ARM libraries. The build system gets confused when both are present.
 
 ### Permission Errors During Build
 
