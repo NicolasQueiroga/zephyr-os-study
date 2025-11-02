@@ -16,7 +16,12 @@ ZEPHYR_WS ?= $(HOME)/zephyr-ws
 export ZEPHYR_BASE := $(ZEPHYR_WS)/zephyr
 
 # West command with venv activation and proper environment setup
-WEST := . $(ZEPHYR_VENV)/bin/activate && export ZEPHYR_BASE=$(ZEPHYR_BASE) && export USER_CACHE_DIR=$(USER_CACHE_DIR) && west
+# Unset ROS environment variables to prevent conflicts with system ROS 2 installation
+WEST := unset ROS_DISTRO ROS_VERSION ROS_PYTHON_VERSION CMAKE_PREFIX_PATH AMENT_PREFIX_PATH && \
+        . $(ZEPHYR_VENV)/bin/activate && \
+        export ZEPHYR_BASE=$(ZEPHYR_BASE) && \
+        export USER_CACHE_DIR=$(USER_CACHE_DIR) && \
+        west
 
 .PHONY: help
 help: ## Show this help message

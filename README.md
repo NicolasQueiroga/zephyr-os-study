@@ -368,6 +368,32 @@ sed -i.bak 's|zephyr/posix/time.h|zephyr/posix/sys/time.h|g' \
   ~/zephyr-ws/modules/micro_ros_zephyr_module/modules/libmicroros/micro_ros_src/src/rcutils/src/time_unix.c
 ```
 
+### ROS 2 Conflict on Ubuntu (fastcdr version error)
+
+If you have ROS 2 installed on Ubuntu and see errors like:
+```
+Could not find a configuration file for package "fastcdr" that is compatible with requested version "2"
+version: 2.2.5 (64bit)
+```
+
+**Solution:** The Makefile automatically isolates the build from system ROS 2. If the error persists:
+
+```bash
+# Temporarily unset ROS environment before building
+unset ROS_DISTRO ROS_VERSION ROS_PYTHON_VERSION CMAKE_PREFIX_PATH AMENT_PREFIX_PATH
+export ZEPHYR_VENV=~/.zephyr_venv
+make clean
+make build
+```
+
+Or remove the ROS 2 sourcing from your `~/.bashrc` during the build:
+```bash
+# Comment out this line temporarily:
+# source /opt/ros/jazzy/setup.bash
+```
+
+The issue occurs because system ROS 2 uses 64-bit libraries, while micro-ROS needs 32-bit ARM libraries.
+
 ### Permission Errors During Build
 
 The project creates a `.cache` directory for writable cache. If you see permission errors:
