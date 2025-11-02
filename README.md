@@ -195,8 +195,24 @@ source ~/.zshrc  # or source ~/.bashrc
 
 ### Quick Start
 
+**First time build (or after clean install):**
 ```bash
-# Set environment variable (if not in shell profile)
+# Set environment variables (if not in shell profile)
+export ZEPHYR_VENV=~/.zephyr_venv
+export ZEPHYR_WS=~/zephyr-ws
+
+# Build micro-ROS library first (takes 5-10 minutes)
+make build-microros
+
+# Then build the project
+make build
+
+# Flash to board
+make flash
+```
+
+**Subsequent builds:**
+```bash
 export ZEPHYR_VENV=~/.zephyr_venv
 
 # Build the project

@@ -32,6 +32,26 @@ help: ## Show this help message
 	@echo "Available targets:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
+.PHONY: build-microros
+build-microros: ## Build micro-ROS library only (run first on fresh install)
+	@echo "Building micro-ROS library..."
+	@echo "This may take 5-10 minutes on first run..."
+	cd $(ZEPHYR_WS)/modules/micro_ros_zephyr_module/modules/libmicroros && \
+	. $(ZEPHYR_VENV)/bin/activate && \
+	make -f libmicroros.mk || { \
+		echo ""; \
+		echo "⚠️  Build failed, applying Zephyr 4.3+ compatibility patch..."; \
+		if [ -f micro_ros_src/src/rcutils/src/time_unix.c ]; then \
+			sed -i.bak 's|zephyr/posix/time.h|zephyr/posix/sys/time.h|g' micro_ros_src/src/rcutils/src/time_unix.c; \
+			echo "✓ Patch applied, rebuilding..."; \
+			make -f libmicroros.mk; \
+		else \
+			echo "✗ Patch file not found"; \
+			exit 1; \
+		fi; \
+	}
+	@echo "✓ micro-ROS library built successfully"
+
 .PHONY: build
 build: ## Build the project
 	@echo "Building for $(BOARD)..."
