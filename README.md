@@ -101,7 +101,7 @@ cd ~/zephyr-ws
 
 # Initialize workspace with west
 source ~/.zephyr_venv/bin/activate
-west init zephyr
+west init .
 cd zephyr
 ```
 
@@ -143,7 +143,7 @@ sed -i.bak 's|zephyr/posix/time.h|zephyr/posix/sys/time.h|g' \
 ```bash
 # Clone to your preferred location
 cd ~
-git clone <your-repo-url> zephyr-os-study
+git clone git@github.com:NicolasQueiroga/zephyr-os-study.git
 cd zephyr-os-study
 ```
 
