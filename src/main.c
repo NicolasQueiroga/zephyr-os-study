@@ -3,11 +3,8 @@
 
 int main(void)
 {
-    static struct k_msgq timer_queue;
-    static char timer_queue_buffer[QUEUE_SIZE * sizeof(double)];
     static struct k_msgq distance_queue;
     static char distance_queue_buffer[QUEUE_SIZE * sizeof(double)];
-    static struct k_thread time_of_flight_thread_data;
     static struct k_thread distance_calculator_thread_data;
     static struct gpio_dt_spec button = GPIO_DT_SPEC_GET_OR(SW0_NODE, gpios, {0});
     static struct gpio_dt_spec echo = GPIO_DT_SPEC_GET_OR(ECHO_NODE, gpios, {0});
@@ -29,7 +26,6 @@ int main(void)
     configure_input(&button, GPIO_INPUT, GPIO_INT_EDGE_TO_ACTIVE);
     configure_input_cb(&button_cb_data.cb, &button, button_pressed);
 
-    k_msgq_init(&timer_queue, timer_queue_buffer, sizeof(double), QUEUE_SIZE);
     k_msgq_init(&distance_queue, distance_queue_buffer, sizeof(double), QUEUE_SIZE);
 
     k_thread_create(&distance_calculator_thread_data, distance_calculator_thread_stack_area,
