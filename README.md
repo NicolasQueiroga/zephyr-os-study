@@ -377,12 +377,57 @@ sudo usermod -a -G dialout $USER
 sudo make flash
 ```
 
-### Flash Fails
+### Flash Fails with Permission Error
+
+If you see `libusb_open() failed with LIBUSB_ERROR_ACCESS`, you need to grant your user access to the ST-Link USB device.
+
+**Option 1: Quick Fix (use sudo)**
+```bash
+sudo -E make flash
+```
+
+**Option 2: Permanent Fix (recommended - set up udev rules)**
+
+This allows flashing without sudo:
+
+```bash
+# Create udev rules file for ST-Link
+sudo tee /etc/udev/rules.d/49-stlinkv2.rules > /dev/null << 'EOF'
+# ST-Link/V2 - STM32 Discovery and Nucleo boards
+SUBSYSTEM=="usb", ATTR{idVendor}=="0483", ATTR{idProduct}=="3744", MODE="0666"
+SUBSYSTEM=="usb", ATTR{idVendor}=="0483", ATTR{idProduct}=="3748", MODE="0666"
+SUBSYSTEM=="usb", ATTR{idVendor}=="0483", ATTR{idProduct}=="374b", MODE="0666"
+SUBSYSTEM=="usb", ATTR{idVendor}=="0483", ATTR{idProduct}=="374c", MODE="0666"
+SUBSYSTEM=="usb", ATTR{idVendor}=="0483", ATTR{idProduct}=="374d", MODE="0666"
+SUBSYSTEM=="usb", ATTR{idVendor}=="0483", ATTR{idProduct}=="374e", MODE="0666"
+SUBSYSTEM=="usb", ATTR{idVendor}=="0483", ATTR{idProduct}=="374f", MODE="0666"
+SUBSYSTEM=="usb", ATTR{idVendor}=="0483", ATTR{idProduct}=="3752", MODE="0666"
+SUBSYSTEM=="usb", ATTR{idVendor}=="0483", ATTR{idProduct}=="3753", MODE="0666"
+EOF
+
+# Reload udev rules
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+
+# Unplug and replug your board
+# Now you can flash without sudo
+make flash
+```
+
+This creates a udev rules file that grants permission to access ST-Link devices (vendor ID `0483`).
+
+**How it works:**
+- By default, USB devices require root access
+- udev rules tell Linux which devices regular users can access
+- The rules file sets permissions to `0666` (read/write for all users) for ST-Link devices
+- After applying rules, you can flash without sudo
+
+### Flash Fails - Other Issues
 
 1. Check board is connected via USB
 2. Try holding RESET button and run flash again
-3. Verify permissions: `ls -l /dev/ttyACM*`
-4. Try: `sudo make flash`
+3. Verify device is detected: `ls -l /dev/ttyACM*`
+4. Ensure you're in the dialout group: `groups | grep dialout`
 
 ### System Dependencies Missing
 
