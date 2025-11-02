@@ -44,7 +44,7 @@ void distance_calculator_thread(void *queue, void *dummy2, void *dummy3)
 
     while (1)
     {
-        if (k_msgq_get(distance_queue, &distance, K_NO_WAIT) == 0)
+        if (k_msgq_get(distance_queue, &distance, K_FOREVER) == 0)
         {
             printk("distance_calculator_thread: distance: %f\n", distance);
         }
