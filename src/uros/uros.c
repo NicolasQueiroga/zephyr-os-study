@@ -7,6 +7,7 @@
 #include <std_msgs/msg/int32.h>
 #include <rclc/rclc.h>
 #include <rclc/executor.h>
+#include <rmw_microros/rmw_microros.h>
 
 // Macro for error checking
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){printk("Failed status on line %d: %d. Aborting.\n",__LINE__,(int)temp_rc); return;}}
@@ -55,6 +56,20 @@ static void timer_callback(rcl_timer_t *timer, int64_t last_call_time)
 int uros_init(void)
 {
     printk("Initializing micro-ROS...\n");
+
+    // Set connection timeout and check Agent reachability
+    printk("Checking micro-ROS Agent connectivity...\n");
+    rmw_uros_set_connection_timeout(2000, 3); // 2 seconds timeout, 3 attempts
+
+    rmw_ret_t ping_ret = rmw_uros_ping_agent(2000, 3);
+    if (ping_ret != RMW_RET_OK) {
+        printk("ERROR: Cannot reach micro-ROS Agent! Make sure Agent is running.\n");
+        printk("Run: docker run -it --rm -v /dev:/dev --privileged --net=host \\\n");
+        printk("     microros/micro-ros-agent:kilted serial --dev /dev/ttyACM0 -v6\n");
+        return -1;
+    }
+
+    printk("Agent connectivity OK!\n");
 
     // Initialize allocator
     allocator = rcl_get_default_allocator();
