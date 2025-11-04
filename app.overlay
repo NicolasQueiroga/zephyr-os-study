@@ -1,0 +1,29 @@
+/*
+ * Device Tree Overlay for micro-ROS on B-L475E-IOT01A
+ *
+ * This overlay configures USART1 for micro-ROS serial transport
+ * and ensures no conflict with the console UART.
+ */
+
+/* Configure USART1 for micro-ROS at 115200 baud */
+&usart1 {
+    status = "okay";
+    current-speed = <115200>;
+};
+
+/*
+ * Optional: If you want to re-enable console on a different UART later,
+ * you can uncomment and configure LPUART1:
+ *
+ * &lpuart1 {
+ *     status = "okay";
+ *     current-speed = <115200>;
+ * };
+ *
+ * / {
+ *     chosen {
+ *         zephyr,console = &lpuart1;
+ *         zephyr,shell-uart = &lpuart1;
+ *     };
+ * };
+ */
