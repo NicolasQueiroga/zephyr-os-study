@@ -190,5 +190,92 @@ install-deps: ## Install required dependencies (Linux only)
 .PHONY: rebuild
 rebuild: clean build ## Clean and rebuild
 
+.PHONY: verify-build
+verify-build: ## Build and verify project compiles without errors
+	@echo "╔════════════════════════════════════════╗"
+	@echo "║  Verifying Build for $(BOARD)         ║"
+	@echo "╚════════════════════════════════════════╝"
+	@echo ""
+	@echo "→ Building project..."
+	$(WEST) build -b $(BOARD) -p
+	@echo ""
+	@echo "✓ Build successful!"
+	@echo ""
+
+.PHONY: verify-memory
+verify-memory: ## Show memory usage verification (RAM/ROM)
+	@echo "╔════════════════════════════════════════╗"
+	@echo "║  Memory Usage Report                   ║"
+	@echo "╚════════════════════════════════════════╝"
+	@echo ""
+	@echo "→ RAM Usage:"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@$(WEST) build -t ram_report | grep -E "(Root|HEAP|STACK|SRAM)" || true
+	@echo ""
+	@echo "→ ROM Usage:"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@$(WEST) build -t rom_report | grep -E "(Root|Flash|ROM)" || true
+	@echo ""
+	@echo "→ Key Memory Sections:"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@$(WEST) build -t ram_report | grep -E "kheap|z_main_stack|CONFIG" || true
+	@echo ""
+
+.PHONY: verify-microros
+verify-microros: ## Verify micro-ROS configuration and library
+	@echo "╔════════════════════════════════════════╗"
+	@echo "║  micro-ROS Configuration Check         ║"
+	@echo "╚════════════════════════════════════════╝"
+	@echo ""
+	@echo "→ Checking micro-ROS library..."
+	@test -f $(ZEPHYR_WS)/modules/micro_ros_zephyr_module/modules/libmicroros/libmicroros.a && \
+		echo "  ✓ libmicroros.a found" || \
+		echo "  ✗ libmicroros.a not found (build micro-ROS first)"
+	@echo ""
+	@echo "→ Checking prj.conf micro-ROS settings..."
+	@grep -E "CONFIG_MICROROS|CONFIG_HEAP|CONFIG_MAIN_STACK|CONFIG_UART_CONSOLE" prj.conf || true
+	@echo ""
+	@echo "→ Checking DeviceTree overlay..."
+	@test -f app.overlay && echo "  ✓ app.overlay exists" || echo "  ✗ app.overlay missing"
+	@test -f app.overlay && grep -E "usart1|115200" app.overlay || true
+	@echo ""
+
+.PHONY: verify-all
+verify-all: verify-build verify-memory verify-microros ## Run all verification checks
+	@echo ""
+	@echo "╔════════════════════════════════════════╗"
+	@echo "║  ✓ All Verifications Complete          ║"
+	@echo "╚════════════════════════════════════════╝"
+	@echo ""
+	@echo "Next steps:"
+	@echo "  1. Flash to board:  make flash"
+	@echo "  2. Start Agent:     make uros-agent-docker"
+	@echo "  3. Monitor output:  make monitor"
+	@echo ""
+
+.PHONY: uros-agent-docker
+uros-agent-docker: ## Run micro-ROS agent via Docker (recommended)
+	@echo "╔════════════════════════════════════════╗"
+	@echo "║  Starting micro-ROS Agent (Docker)     ║"
+	@echo "╚════════════════════════════════════════╝"
+	@echo ""
+	@echo "Using serial port: /dev/ttyACM0"
+	@echo "Verbose logging: enabled (-v6)"
+	@echo ""
+	@echo "Note: If connection fails, try:"
+	@echo "  - Check port: ls -l /dev/ttyACM*"
+	@echo "  - Fix permissions: sudo chmod 666 /dev/ttyACM0"
+	@echo "  - Try /dev/ttyACM1 if ACM0 doesn't work"
+	@echo ""
+	docker run -it --rm -v /dev:/dev --privileged --net=host \
+		microros/micro-ros-agent:kilted serial --dev /dev/ttyACM0 -v6
+
+.PHONY: monitor
+monitor: ## Monitor serial output (requires screen)
+	@echo "Monitoring serial output on /dev/ttyACM0..."
+	@echo "Press Ctrl-A, then K to exit"
+	@which screen > /dev/null 2>&1 || (echo "Error: 'screen' not found. Install with: brew install screen" && exit 1)
+	screen /dev/ttyACM0 115200
+
 .PHONY: all
 all: build ## Default target: build the project
